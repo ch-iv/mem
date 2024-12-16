@@ -37,19 +37,23 @@ def main() -> None:
         curses.noecho()
         curses.cbreak()
 
+        search_buffer = ""
         list_start_y = 1
         list_cursor_y = list_start_y
         while True:
+            stdscr.clear()
             height, width = stdscr.getmaxyx()
             stdscr.addstr(0, 0, "Mem".center(width), curses.A_BOLD)
             stdscr.move(list_cursor_y, 0)
 
             notes = get_notes_in_dir(NOTES_PATH)
+            notes = list(filter(lambda x: search_buffer in x.content_path.name, notes))
             for i, note in enumerate(notes):
                 note_name = note.content_path.name.removesuffix("".join(MEMNOTE_SUFFIXES))
                 stdscr.addstr(i + list_start_y, 0, note_name.ljust(width),
                               curses.A_STANDOUT if list_cursor_y - list_start_y == i else 0)
 
+            stdscr.addstr(height - 1, 0, f"Search: {search_buffer}".ljust(width - 1), curses.A_BOLD)
             stdscr.refresh()
             char = stdscr.getch()
             if char == curses.KEY_DOWN:
@@ -66,6 +70,10 @@ def main() -> None:
 
                 curses.reset_prog_mode()
                 stdscr.refresh()
+            elif char == curses.KEY_BACKSPACE:
+                search_buffer = search_buffer[:-1]
+            else:
+                search_buffer += chr(char)
     else:
         if sys.argv[1].casefold() == "new":
             note_name = input("Name: ")
